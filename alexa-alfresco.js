@@ -19,8 +19,10 @@ var access_token = "";   /* some oAuth token such as 1234567-90b3-4cf5-9a85-ad4d
 var cmisUrlCloudRoot = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/api/" + tenant + "/public/cmis/versions/1.1/browser/root";
 var cmisUrlCloudParms = "&filter=cmis%3Aname&includeAllowableActions=false&includeRelationships=none&renditionFilter=none&includePolicyIds=false&includeACL=false&succinct=true";
 var cmisUrlCloudSelector = "children";
-var cmisUrlCloudobjectId = "fcb471c7-0bc1-4831-9119-f574a7750884";  // TODO get the root sites folder id dynamically
-var sitesUrl = cmisUrlCloudRoot + "?objectId=" + cmisUrlCloudobjectId + "&cmisselector=" + cmisUrlCloudSelector + cmisUrlCloudParms;var restUrlCloudUrl = cmisUrlCloudRoot + "?objectId=" + cmisUrlCloudobjectId + "&cmisselector=" + cmisUrlCloudSelector + cmisUrlCloudParms;
+var cmisUrlCloudobjectId = process.env.ROOT_ID;
+var fileId = process.env.FILE_ID;
+var sitesUrl = cmisUrlCloudRoot + "?objectId=" + cmisUrlCloudobjectId + "&cmisselector=" + cmisUrlCloudSelector + cmisUrlCloudParms;
+var restUrlCloudUrl = cmisUrlCloudRoot + "?objectId=" + cmisUrlCloudobjectId + "&cmisselector=" + cmisUrlCloudSelector + cmisUrlCloudParms;
 var tasksUrl = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/api/" + tenant + "/public/workflow/versions/1/tasks";
 var taskActionUrl = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/service/api/task/activiti";
 
@@ -96,6 +98,7 @@ function onIntent(intentRequest, session, callback) {
     var intent = intentRequest.intent,
         intentName = intentRequest.intent.name;
     console.log("intentName = " + intentName);
+    console.log("cmisUrl = " + cmisUrl);
 
     if ("Available" === intentName) {
         getAvailableResponse(intent, session, callback);
@@ -217,7 +220,7 @@ function getDocumentReadResponse(intent, session, callback) {
    var repromptText = null;
    var shouldEndSession = false;
    console.log("about to try to read a document");
-   var documentUrl = cmisUrlCloudRoot + "?objectId=635f277d-7935-46fd-8efa-a43459a7cb2c" + "&cmisselector=content" + cmisUrlCloudParms;
+   var documentUrl = cmisUrlCloudRoot + "?objectId=" + fileId + "&cmisselector=content" + cmisUrlCloudParms;
    console.log("documentUrl = " + documentUrl);
    request(documentUrl, function(error, response, body) {
    console.log("HTTP statusCode=" + response.statusCode);
