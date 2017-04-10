@@ -1,25 +1,28 @@
 var http = require('http');
+var dotenv = require('dotenv');
+dotenv.load();
 
 /**
  * This sample illustrates how to use Alexa to execute some functions in Alfresco using your voice.
- * 
+ *
  * author: Melahn
  **/
-var host = "";  /* TODO use some EC2 instance such as ec2-12-34-56-7.compute-1.amazonaws.com */
-var tenant = "-default-";
-var userId = ""; /* TODO use an Alfresco userid here */
-var password = ""; /* TODO use an Alfresco password here */
-var port = "8080";
+var host =  process.env.ALFRESCO_HOST;
+var tenant =  process.env.ALFRESCO_TENANT;
+var userId =  process.env.ALFRESCO_USER;
+var password =  process.env.ALFRESCO_PASS;
+var port =  process.env.ALFRESCO_PORT;
+var appId = process.env.APP_ID;
+
 var cmisUrl = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/api/" + tenant + "/public/cmis/versions/1.1/browser";
 var access_token = "";   /* some oAuth token such as 1234567-90b3-4cf5-9a85-ad4d20ceed7f  */
-var cmisUrlCloudRoot = "http://" + userId + ":" + password + "@" + host + ":8080/alfresco/api/" + tenant + "/public/cmis/versions/1.1/browser/root";
+var cmisUrlCloudRoot = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/api/" + tenant + "/public/cmis/versions/1.1/browser/root";
 var cmisUrlCloudParms = "&filter=cmis%3Aname&includeAllowableActions=false&includeRelationships=none&renditionFilter=none&includePolicyIds=false&includeACL=false&succinct=true";
 var cmisUrlCloudSelector = "children";
 var cmisUrlCloudobjectId = "fcb471c7-0bc1-4831-9119-f574a7750884";  // TODO get the root sites folder id dynamically
 var sitesUrl = cmisUrlCloudRoot + "?objectId=" + cmisUrlCloudobjectId + "&cmisselector=" + cmisUrlCloudSelector + cmisUrlCloudParms;var restUrlCloudUrl = cmisUrlCloudRoot + "?objectId=" + cmisUrlCloudobjectId + "&cmisselector=" + cmisUrlCloudSelector + cmisUrlCloudParms;
-var tasksUrl = "http://" + userId + ":" + password + "@" + host + ":8080/alfresco/api/" + tenant + "/public/workflow/versions/1/tasks";
-var taskActionUrl = "http://" + userId + ":" + password + "@" + host + ":8080/alfresco/service/api/task/activiti";
-var appId = ""; /* use an Alexa appid here */ // TODO get this value from configuration
+var tasksUrl = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/api/" + tenant + "/public/workflow/versions/1/tasks";
+var taskActionUrl = "http://" + userId + ":" + password + "@" + host + ":" + port + "/alfresco/service/api/task/activiti";
 
 /**
  *  Route the incoming request based on the event type
@@ -31,11 +34,11 @@ exports.handler = function (event, context) {
         /**
          * This prevents someone else from configuring a skill that sends requests to this function.
          */
-     
+
         if (event.session.application.applicationId !== appId) {
              context.fail("Invalid Application ID");
         }
-       
+
 
         if (event.session.new) {
             onSessionStarted({requestId: event.request.requestId}, event.session);
@@ -93,7 +96,7 @@ function onIntent(intentRequest, session, callback) {
     var intent = intentRequest.intent,
         intentName = intentRequest.intent.name;
     console.log("intentName = " + intentName);
- 
+
     if ("Available" === intentName) {
         getAvailableResponse(intent, session, callback);
     } else if ("Hello" === intentName) {
@@ -169,15 +172,15 @@ function getAvailableResponse(intent, session, callback) {
     var speechOutput="";
     var request = intent.slots.status.value;
     if (request !== null && request !== undefined && (request === "up" || request === "down")) {
-       speechOutput = name + "  You asked whether Alfresco is " + request + ".    ";  
+       speechOutput = name + "  You asked whether Alfresco is " + request + ".    ";
     } else {
-       speechOutput = name + "  I am not sure what you want to know but I can tell you that ";    
+       speechOutput = name + "  I am not sure what you want to know but I can tell you that ";
     }
     isAlfrescoAvailable(intent.name, session.attributes, callback, speechOutput, repromptText, shouldEndSession);
 }
-/* 
+/*
  * Gets the user name from the slot and saves it in the session
-  
+
    Also provides a friendly greeting to that user.
 */
 function getHelloResponse(intent, session, callback) {
@@ -217,7 +220,7 @@ function getDocumentReadResponse(intent, session, callback) {
    var documentUrl = cmisUrlCloudRoot + "?objectId=635f277d-7935-46fd-8efa-a43459a7cb2c" + "&cmisselector=content" + cmisUrlCloudParms;
    console.log("documentUrl = " + documentUrl);
    request(documentUrl, function(error, response, body) {
-   console.log("HTTP statusCode=" + response.statusCode);        
+   console.log("HTTP statusCode=" + response.statusCode);
    if (response.statusCode === 200)
       {
          speechOutput += "I found your document.  Here is the content. " + body;
@@ -240,8 +243,8 @@ function getListOfSitesResponse(intent, session, callback) {
    console.log("sitesUrl = " + sitesUrl);
    console.log("about to try to get the list of sites using URL = " + sitesUrl);
    request(sitesUrl, function(error, response, body) {
-   console.log("HTTP statusCode = " + response.statusCode);  
-   var numberOfSites = 0;   
+   console.log("HTTP statusCode = " + response.statusCode);
+   var numberOfSites = 0;
    if (response.statusCode === 200)
       {
          console.log("body = " + body);
@@ -385,14 +388,14 @@ function getUseSiteResponse(intent, session, callback) {
     var speechOutput="";
     var site = intent.slots.site.value;
     if (site !== null && site !== undefined) {
-       speechOutput = name + "  You asked to use Site " + site + ".";  
+       speechOutput = name + "  You asked to use Site " + site + ".";
        session.attributes["site"] = site;
     } else {
-       speechOutput = name + "  Sorry.  I am not sure what you want to do.";    
+       speechOutput = name + "  Sorry.  I am not sure what you want to do.";
     }
     callback(session.attributes,
        buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
-    console.log("getUseSiteResponse exit");   
+    console.log("getUseSiteResponse exit");
 }
 
 /**
@@ -401,11 +404,11 @@ function getUseSiteResponse(intent, session, callback) {
 function isAlfrescoAvailable(intentName, attributes, callback, speechOutput, repromptText, shouldEndSession) {
    var speechOutputDown = "Alfresco is down";
    var speechOutputUp = "Alfresco is up";
-   
+
    var request = require("request");
    console.log("about to try request to get " + cmisUrl);
    request(cmisUrl, function(error, response, body) {
-     console.log("HTTP statusCode=" + response.statusCode);        
+     console.log("HTTP statusCode=" + response.statusCode);
     if (response.statusCode === 200)
        {
           speechOutput += speechOutputUp;
@@ -480,7 +483,7 @@ function enumerateTasks(tasksObj) {
     console.log("enumerateTasks");
     var count = tasksObj.list.pagination.totalItems;
     var response = "";
-	for (i = 0; i < count; i++) { 
+	for (i = 0; i < count; i++) {
 		var taskName = "   It is a " + tasksObj.list.entries[i].entry.name + "<break time=\"1000ms\"/>" + tasksObj.list.entries[i].entry.description ;
 		var dueDate = simplifyDate(tasksObj.list.entries[i].entry.dueAt);
 		if (i == 0 || i < count-1) {
@@ -515,13 +518,13 @@ function enumerateSites(sitesObj) {
     var count = sitesObj.numItems;
     var response = "";
     var j=0;
-	for (i = 0; i < count; i++) { 
+	for (i = 0; i < count; i++) {
 		var siteName = sitesObj.objects[i].object.succinctProperties["cmis:name"];
 		j = i+1;
 		if (i < count-1) {
-	       response += j + ".  " + siteName + ".  "; 
+	       response += j + ".  " + siteName + ".  ";
 	    } else {
-	       response += " and " + j + ".  " + siteName; 
+	       response += " and " + j + ".  " + siteName;
 	    }
 	  }
 	return response;
@@ -568,13 +571,13 @@ function buildResponse(sessionAttributes, speechletResponse) {
 
 /**
  *  Returns the name of the user that is currently in the session.
- * 
+ *
  *  If no name is in the session, returns "Dave" (reference to 2001, A Space Odyssey)
  */
 function getUserName(sessionAttributes) {
     console.log("getUserName");
     console.log("sessionAttributes = " + sessionAttributes);
-    var name = "Dave";  // The default user name 
+    var name = "Dave";  // The default user name
     if (sessionAttributes !== undefined && sessionAttributes !== null && sessionAttributes.name !== null) {
         name = sessionAttributes.name;
         console.log("The user name in the session = " + name)
@@ -584,20 +587,20 @@ function getUserName(sessionAttributes) {
 
 /**
  *  Answers a simple date.
- * 
+ *
  *  Given a date of the form "2016-01-15T00:00:00.000+0000" will answer "2016-01-15"
- * 
+ *
  */
 function simplifyDate(completeDate) {
 	console.log("completeDate: " + completeDate)
 	var simpleDate = completeDate.split("T", 1)[0];
 	console.log("simpleDate: " + simpleDate)
-	return simpleDate;	
+	return simpleDate;
 }
 
 /**
  *  Returns the base CMIS URL.
- * 
+ *
  *  If "cloud" is passed in as a parameter, returns the CMIS URL for the Alfresco Cloud.
  *  Otherwise returns the CMIS URL for an on-prem instance.
  */
@@ -608,7 +611,3 @@ function getCMISUrl(location) {
 		return "http://admin:admin@ec2-54-87-18-28.compute-1.amazonaws.com:8080/alfresco/api/-default-/public/cmis/versions/1.1/browser";
 	}
 }
-
-
-
-

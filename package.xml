@@ -9,6 +9,15 @@
             <include>alexa-alfresco.js</include>
             <include>node_modules/**</include>
         </includes>
+        <excludes>
+            <exclude>.env</exclude>
+        </excludes>
     </fileSet>
     </fileSets>
+    <files>
+      <file>
+        <source>config.env.production</source>
+        <destName>.env</destName>
+      </file>
+    </files>
 </assembly>
